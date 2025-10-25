@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Middle Eastern Translator</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌍 Middle Eastern Translator</h1>
+            <div class="status-indicator" id="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Ready</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Service Status Section -->
+            <section class="section">
+                <h2>🌐 Service Status</h2>
+                <div class="form-group">
+                    <div class="status-card">
+                        <div class="status-item">
+                            <span class="status-label">Backend Service:</span>
+                            <span class="status-value" id="backend-status">Checking...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Translation API:</span>
+                            <span class="status-value" id="translation-status">Ready</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">TTS Service:</span>
+                            <span class="status-value" id="tts-status">Ready</span>
+                        </div>
+                    </div>
+                    <small>All services are managed by our backend. No API keys required!</small>
+                </div>
+            </section>
+
+            <!-- Language Settings -->
+            <section class="section">
+                <h2>🌐 Language Settings</h2>
+                <div class="form-group">
+                    <label for="source-language">Source Language:</label>
+                    <select id="source-language">
+                        <option value="ar">🇸🇦 Arabic (العربية)</option>
+                        <option value="fa">🇮🇷 Persian (فارسی)</option>
+                        <option value="tr">🇹🇷 Turkish (Türkçe)</option>
+                        <option value="he">🇮🇱 Hebrew (עברית)</option>
+                        <option value="ku">🏴 Kurdish (کوردی)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="target-language">Target Language:</label>
+                    <select id="target-language">
+                        <option value="en">🇬🇧 English</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Translation Mode -->
+            <section class="section">
+                <h2>🔄 Translation Mode</h2>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="bidirectional-mode" />
+                        <span class="checkmark"></span>
+                        Bidirectional Translation (Auto-detect language)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto-detect" />
+                        <span class="checkmark"></span>
+                        Auto-detect source language
+                    </label>
+                </div>
+            </section>
+
+            <!-- Audio Settings -->
+            <section class="section">
+                <h2>🎵 Audio Settings</h2>
+                <div class="form-group">
+                    <label for="volume-slider">TTS Volume:</label>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.8" />
+                    <span class="volume-display" id="volume-display">80%</span>
+                </div>
+                <div class="form-group">
+                    <label for="mic-device">Microphone Device:</label>
+                    <select id="mic-device">
+                        <option value="default">Default Microphone</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Testing Mode -->
+            <section class="section">
+                <h2>🧪 Testing Mode</h2>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="mock-mode" />
+                        <span class="checkmark"></span>
+                        Mock Mode (Test without API calls)
+                    </label>
+                    <small>Enable this to test the extension without using API credits</small>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <div class="actions">
+                <button id="save-settings" class="btn btn-primary">💾 Save Settings</button>
+                <button id="test-connection" class="btn btn-secondary">🔍 Test Connection</button>
+                <button id="clear-data" class="btn btn-danger">🗑️ Clear All Data</button>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="status-messages" class="status-messages"></div>
+        </main>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
