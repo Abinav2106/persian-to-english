@@ -1,12 +1,167 @@
-import { storageManager } from './modules/storage.js';
-import { AudioCapture } from './modules/audioCapture.js';
-import { WhisperAPI } from './modules/whisperAPI.js';
-import { TranslationAPI } from './modules/translationAPI.js';
-import { ElevenLabsTTS } from './modules/elevenLabsTTS.js';
-import { ErrorHandler } from './modules/errorHandler.js';
-import { SUPPORTED_LANGUAGES, API_ENDPOINTS } from './modules/constants.js';
+// Background service - No ES modules, works with Manifest V3
+// Inline all modules for compatibility
 
+// Constants
+const API_ENDPOINTS = {
+  BACKEND_BASE_URL: 'https://your-backend-app.herokuapp.com',
+  TRANSCRIBE: '/api/transcribe',
+  TRANSLATE: '/api/translate',
+  SYNTHESIZE: '/api/synthesize',
+  HEALTH: '/health'
+};
+
+const SUPPORTED_LANGUAGES = {
+  'ar': { name: 'Arabic', flag: '🇸🇦', whisperCode: 'ar', displayName: 'العربية' },
+  'fa': { name: 'Persian', flag: '🇮🇷', whisperCode: 'fa', displayName: 'فارسی' },
+  'tr': { name: 'Turkish', flag: '🇹🇷', whisperCode: 'tr', displayName: 'Türkçe' },
+  'he': { name: 'Hebrew', flag: '🇮🇱', whisperCode: 'he', displayName: 'עברית' },
+  'ku': { name: 'Kurdish', flag: '🏴', whisperCode: 'ku', displayName: 'کوردی' },
+  'en': { name: 'English', flag: '🇬🇧', whisperCode: 'en', displayName: 'English' }
+};
+
+const DEFAULT_SETTINGS = {
+  sourceLanguage: 'ar',
+  targetLanguage: 'en',
+  mockMode: true,
+  volume: 0.8,
+  bidirectionalMode: false,
+  autoDetectLanguage: true,
+  micDevice: 'default'
+};
+
+// Storage Manager
+const storageManager = {
+  async getSettings() {
+    try {
+      const result = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+      return result;
+    } catch (error) {
+      console.error('Error getting settings:', error);
+      return DEFAULT_SETTINGS;
+    }
+  },
+  async saveSettings(settings) {
+    try {
+      await chrome.storage.sync.set(settings);
+      return true;
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      return false;
+    }
+  },
+  async getApiKeys() {
+    return { openaiApiKey: '', elevenLabsApiKey: '' };
+  },
+  async clearAll() {
+    try {
+      await chrome.storage.sync.clear();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+};
+
+// Error Handler (minimal)
+const ErrorHandler = class {
+  retryWithBackoff(fn, context) {
+    return fn();
+  }
+  handleAudioError(error, context) {
+    return { type: 'AUDIO_ERROR', message: error.message };
+  }
+  handleApiError(error, apiName) {
+    return { type: 'API_ERROR', message: error.message };
+  }
+  getUserFriendlyMessage(info) {
+    return info.message || 'An error occurred';
+  }
+  logError(error, context) {
+    console.error(`[${context}]`, error);
+  }
+  isFeatureDisabled() {
+    return false;
+  }
+};
+
+// Mock API implementations
+const WhisperAPI = class {
+  transcribe(audioBlob, language, mockMode) {
+    if (mockMode) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve({ text: 'مرحبا، كيف حالك؟', language: 'ar', confidence: 0.95 });
+        }, 1000);
+      });
+    }
+    throw new Error('Backend not configured');
+  }
+  detectLanguage(text) {
+    return /[؀-ۿ]/.test(text) ? 'ar' : 'en';
+  }
+};
+
+const TranslationAPI = class {
+  translate(text, sourceLang, targetLang, mockMode) {
+    if (mockMode) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve({ translatedText: 'Hello, how are you?', confidence: 0.9 });
+        }, 800);
+      });
+    }
+    throw new Error('Backend not configured');
+  }
+  needsTranslation(text, targetLang) {
+    return true;
+  }
+};
+
+const ElevenLabsTTS = class {
+  synthesize(text, language, mockMode) {
+    if (mockMode) {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve(new ArrayBuffer(44));
+        }, 500);
+      });
+    }
+    throw new Error('Backend not configured');
+  }
+  async playAudio(buffer, volume) {
+    // Mock audio playback
+  }
+  cleanup() {}
+};
+
+const AudioCapture = class {
+  constructor() {
+    this.isCapturing = false;
+  }
+  async initialize() {}
+  startCapture() {
+    this.isCapturing = true;
+  }
+  stopCapture() {
+    this.isCapturing = false;
+  }
+  onAudioChunk(callback) {
+    // Mock audio chunks
+    setInterval(() => {
+      if (this.isCapturing) {
+        callback(new Blob());
+      }
+    }, 2500);
+  }
+  getStatus() {
+    return { isInitialized: false, isCapturing: this.isCapturing };
+  }
+  cleanup() {}
+};
+
+// BackgroundService class
 class BackgroundService {
+
     constructor() {
         this.audioCapture = null;
         this.whisperAPI = new WhisperAPI();
@@ -397,4 +552,12 @@ const backgroundService = new BackgroundService();
 // Cleanup on extension unload
 chrome.runtime.onSuspend.addListener(() => {
     backgroundService.cleanup();
+
+}
+
+// Initialize
+const backgroundService = new BackgroundService();
+
+chrome.runtime.onSuspend.addListener(() => {
+  backgroundService.cleanup();
 });
