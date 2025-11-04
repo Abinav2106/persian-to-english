@@ -1,23 +1,33 @@
 // Use dynamic imports for Manifest V3 service worker
 let storageManager, AudioCapture, WhisperAPI, TranslationAPI, ElevenLabsTTS, ErrorHandler, SUPPORTED_LANGUAGES, API_ENDPOINTS;
+let modulesLoaded = false;
+let modulesLoadPromise = null;
 
 async function loadModules() {
-    const storageModule = await import('./modules/storage.js');
-    const audioCaptureModule = await import('./modules/audioCapture.js');
-    const whisperModule = await import('./modules/whisperAPI.js');
-    const translationModule = await import('./modules/translationAPI.js');
-    const ttsModule = await import('./modules/elevenLabsTTS.js');
-    const errorHandlerModule = await import('./modules/errorHandler.js');
-    const constantsModule = await import('./modules/constants.js');
+    if (modulesLoaded) return Promise.resolve();
+    if (modulesLoadPromise) return modulesLoadPromise;
     
-    storageManager = storageModule.storageManager;
-    AudioCapture = audioCaptureModule.AudioCapture;
-    WhisperAPI = whisperModule.WhisperAPI;
-    TranslationAPI = translationModule.TranslationAPI;
-    ElevenLabsTTS = ttsModule.ElevenLabsTTS;
-    ErrorHandler = errorHandlerModule.ErrorHandler;
-    SUPPORTED_LANGUAGES = constantsModule.SUPPORTED_LANGUAGES;
-    API_ENDPOINTS = constantsModule.API_ENDPOINTS;
+    modulesLoadPromise = (async () => {
+        const storageModule = await import('./modules/storage.js');
+        const audioCaptureModule = await import('./modules/audioCapture.js');
+        const whisperModule = await import('./modules/whisperAPI.js');
+        const translationModule = await import('./modules/translationAPI.js');
+        const ttsModule = await import('./modules/elevenLabsTTS.js');
+        const errorHandlerModule = await import('./modules/errorHandler.js');
+        const constantsModule = await import('./modules/constants.js');
+        
+        storageManager = storageModule.storageManager;
+        AudioCapture = audioCaptureModule.AudioCapture;
+        WhisperAPI = whisperModule.WhisperAPI;
+        TranslationAPI = translationModule.TranslationAPI;
+        ElevenLabsTTS = ttsModule.ElevenLabsTTS;
+        ErrorHandler = errorHandlerModule.ErrorHandler;
+        SUPPORTED_LANGUAGES = constantsModule.SUPPORTED_LANGUAGES;
+        API_ENDPOINTS = constantsModule.API_ENDPOINTS;
+        modulesLoaded = true;
+    })();
+    
+    return modulesLoadPromise;
 }
 
 class BackgroundService {
@@ -36,7 +46,16 @@ class BackgroundService {
 
     setupMessageHandlers() {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            this.handleMessage(message, sender, sendResponse);
+            // Ensure modules are loaded before handling messages
+            (async () => {
+                try {
+                    await loadModules();
+                    await this.handleMessage(message, sender, sendResponse);
+                } catch (error) {
+                    console.error('Error in message handler:', error);
+                    sendResponse({ success: false, error: error.message });
+                }
+            })();
             return true; // Keep message channel open for async responses
         });
     }
