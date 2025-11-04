@@ -22,6 +22,7 @@
     {
       "matches": ["https://meet.google.com/*"],
       "js": ["content.js"],
+      "type": "module",
       "run_at": "document_end"
     }
   ],

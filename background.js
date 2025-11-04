@@ -1,10 +1,24 @@
-import { storageManager } from './modules/storage.js';
-import { AudioCapture } from './modules/audioCapture.js';
-import { WhisperAPI } from './modules/whisperAPI.js';
-import { TranslationAPI } from './modules/translationAPI.js';
-import { ElevenLabsTTS } from './modules/elevenLabsTTS.js';
-import { ErrorHandler } from './modules/errorHandler.js';
-import { SUPPORTED_LANGUAGES, API_ENDPOINTS } from './modules/constants.js';
+// Use dynamic imports for Manifest V3 service worker
+let storageManager, AudioCapture, WhisperAPI, TranslationAPI, ElevenLabsTTS, ErrorHandler, SUPPORTED_LANGUAGES, API_ENDPOINTS;
+
+async function loadModules() {
+    const storageModule = await import('./modules/storage.js');
+    const audioCaptureModule = await import('./modules/audioCapture.js');
+    const whisperModule = await import('./modules/whisperAPI.js');
+    const translationModule = await import('./modules/translationAPI.js');
+    const ttsModule = await import('./modules/elevenLabsTTS.js');
+    const errorHandlerModule = await import('./modules/errorHandler.js');
+    const constantsModule = await import('./modules/constants.js');
+    
+    storageManager = storageModule.storageManager;
+    AudioCapture = audioCaptureModule.AudioCapture;
+    WhisperAPI = whisperModule.WhisperAPI;
+    TranslationAPI = translationModule.TranslationAPI;
+    ElevenLabsTTS = ttsModule.ElevenLabsTTS;
+    ErrorHandler = errorHandlerModule.ErrorHandler;
+    SUPPORTED_LANGUAGES = constantsModule.SUPPORTED_LANGUAGES;
+    API_ENDPOINTS = constantsModule.API_ENDPOINTS;
+}
 
 class BackgroundService {
     constructor() {
@@ -391,10 +405,19 @@ class BackgroundService {
     }
 }
 
-// Initialize background service
-const backgroundService = new BackgroundService();
+// Initialize background service after modules are loaded
+let backgroundService;
+
+loadModules().then(() => {
+    backgroundService = new BackgroundService();
+    console.log('Background service initialized');
+}).catch(error => {
+    console.error('Failed to load modules:', error);
+});
 
 // Cleanup on extension unload
 chrome.runtime.onSuspend.addListener(() => {
-    backgroundService.cleanup();
+    if (backgroundService) {
+        backgroundService.cleanup();
+    }
 });
